@@ -25,6 +25,9 @@ class Player extends Component{
             this.setState({currentTime : this.audio.currentTime});
             if(this.audio.currentTime === this.state.songDuration){
                 this.audio.pause();
+                if( this.state.activeSongIndex != this.state.playList.length -1 ){
+                    this.changeTrack('next');
+                }
             }
         })
     }
@@ -47,7 +50,8 @@ class Player extends Component{
     /**
      * Play clicked file
      */
-    playFile = (file, index) =>{
+    playFile = (file, index, event) =>{
+        event.stopPropagation();
         const currentTime = this.audio.currentTime;
         this.audio.pause();
         this.audio.src = URL.createObjectURL(file);
@@ -62,6 +66,7 @@ class Player extends Component{
      */
     playSong = () =>{
         const { activeSongIndex, playList, play } = this.state;
+        if(!playList || !playList.length) return false;
         if(this.audio.currentTime && play) {
             this.audio.pause();
             this.setState({ play : !play })
@@ -76,6 +81,7 @@ class Player extends Component{
             this.setState({ play: !play })
         }
     }
+
     /**
      * Stop current playing song
      */
@@ -159,7 +165,7 @@ class Player extends Component{
         return(
             <div onDragOver ={(e) => this.dragOver(e)} onDrop={(e) => this.fileDropHandler(e)} onDragLeave={(e) => e.preventDefault()}>
             <div className='col-md-12 col-sm-6'>
-                <div className='col-md-4 col-sm-12 player_control'>
+                <div className='col-md-5 col-sm-12 player_control'>
                     <div className='col-md-8 col-sm-12 album_cover'>
                         {/* <img src={artistImage} height='100%' width='100%' /> */}
                         <div className='col-md-6 volume-control'>
@@ -196,20 +202,32 @@ class Player extends Component{
                         <label htmlFor='inputFile' ref='inputLabel'>Drop or click to add songs</label>
                         <input type='file' id='inputFile' style={{'display':'none'}} multiple  onChange={(e) => this.songList(e)}/>
                     </div>
+                    <table>
                     {
                      playList && playList.length > 0 &&
-                     playList.map((i, index) => {
-                         return (
-                            <div key={index}>
-                                <span 
-                                    style={{'cursor':'pointer'}} 
-                                    className={activeSongIndex === index ? 'active' : ''}
-                                    onClick={()=> this.playFile(i, index)}
-                                    >{i.name}</span>
-                            </div>     
+                        <thead>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </thead>
+                    }    
+                    {
+                        playList && playList.length > 0 &&
+                        playList.map((i, index) => {
+                            return (
+                                <tr key={index}>
+                                    <td>{index +1}</td>
+                                    <td 
+                                        style={{'cursor':'pointer'}} 
+                                        className={activeSongIndex === index ? 'active' : ''}
+                                        onClick={(e)=> this.playFile(i, index, e)}
+                                        >{i.name}</td>
+                                    <td></td>     
+                                </tr>
                          )
-                     })   
+                        })   
                     }
+                    </table>
                 </div>
             </div>
             </div>
