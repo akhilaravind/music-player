@@ -10,16 +10,39 @@ class Player extends Component{
             pause: false,
             stop: false,
             currentTime: null,
-            songLength: null,
-            activeSongIndex: 0
+            songDuration: 0,
+            activeSongIndex: 0,
+            volume: 30, 
+            files : undefined
         }
         this.audio = new Audio();
-    }
-    songList = (e) => {
-        let files = Object.keys(e.target.files).map(i => e.target.files[i]);
-        this.setState({
-            playList: files
+        this.audio.volume = this.state.volume / 100;
+        this.audio.addEventListener('loadedmetadata',()=> {
+            const that = this;
+            this.setState({songDuration: that.audio.duration});
         });
+        this.audio.addEventListener('timeupdate', ()=>{
+            this.setState({currentTime : this.audio.currentTime});
+            if(this.audio.currentTime === this.state.songDuration){
+                this.audio.pause();
+            }
+        })
+    }
+
+    /**
+    * Create song list on file upload change
+     */
+    songList = (e) => {
+        if(!e.target.files.length) return;
+        let files = Object.keys(e.target.files).map(i => e.target.files[i]);
+        let {playList} = {...this.state.playList}
+        playList = playList ? {...playList, ...files}: files;
+        this.setState({
+            playList,
+            file : e.target.files
+        });
+        this.audio.pause();
+        this.audio.currentTime = 0;
     }
     /**
      * Play clicked file
@@ -59,15 +82,119 @@ class Player extends Component{
     stopSong = () =>{
         this.audio.pause()
         this.audio.currentTime = 0;
+        this.setState({play:false})
     }
+
+    /**
+     * Change track Next and Previous. 
+     * @param { next, prev}
+     * switch track with param value.
+     */
+    changeTrack= (selection) => {
+        if(!this.state.play) return;
+        let {activeSongIndex, playList} = {...this.state}
+        var index;
+        switch(selection){
+            case 'next':
+                index = activeSongIndex === playList.length -1 ? 0 : activeSongIndex +1;
+                break;
+            case 'prev':
+                index = activeSongIndex === 0 ? playList.length -1 : activeSongIndex -1;
+                break;
+            }
+            this.audio.src = URL.createObjectURL(playList[index])
+            this.setState({activeSongIndex : index})
+            this.audio.play();
+    }
+    /**
+     * Update volume
+     * @param { target value }
+     */
+    updateVolume = (event) =>{
+       const volume = event.target.value;
+       this.audio.volume = volume / 100;
+       this.setState({volume});
+    }
+    /**
+     * Seekbar, change audio using range seekbar
+     * @param { Event }
+     */
+    seekBar = (e) =>{
+        this.setState({ currentTime : e.target.value });
+        this.audio.currentTime = e.target.value;
+    }
+
+    /**
+    * File drop handler
+     */
+  
+     fileDropHandler = (event)=>{
+        event.preventDefault();
+        let files = Object.keys(event.dataTransfer.files).map(i => event.dataTransfer.files[i]);
+        let {playList} = {...this.state.playList}
+        playList = files;
+        this.setState({
+            playList,
+            file : event.dataTransfer.files
+        });
+        this.audio.pause();
+        this.audio.currentTime = 0;
+        event.dataTransfer.clearData()
+     }
+     /**
+      * File drop events; event is prevented to stop opening the file.
+      */
+     dragOver = (e)=>{
+         e.preventDefault();
+         e.stopPropagation();
+     }
+     /**
+      * Browse file event on clicking div
+      */
+     fileBrowse = ()=>{
+        this.refs.inputLabel.click();
+     }
     render(){
-        const {playList, activeSongIndex} = this.state;
+        const {playList, activeSongIndex, volume, songDuration, currentTime, play} = this.state;
         return(
-            <div>
-                <div>
-                    <h4>File list</h4>
-                    <div className='col-md-6'>
-                        <input type='file' multiple  onChange={(e) => this.songList(e)}/>
+            <div onDragOver ={(e) => this.dragOver(e)} onDrop={(e) => this.fileDropHandler(e)} onDragLeave={(e) => e.preventDefault()}>
+            <div className='col-md-12 col-sm-6'>
+                <div className='col-md-4 col-sm-12 player_control'>
+                    <div className='col-md-8 col-sm-12 album_cover'>
+                        {/* <img src={artistImage} height='100%' width='100%' /> */}
+                        <div className='col-md-6 volume-control'>
+                            <input type='range' id='volume' steps='1' value={volume} onChange={(e) => this.updateVolume(e)} min='0' max='100' />
+                        </div>
+                    </div>
+                    <div className='col-md-12 col-sm-12 track'>
+                        <input 
+                            type='range' 
+                            value={currentTime ? currentTime : 0} 
+                            min='0' 
+                            max={songDuration}
+                            steps='0.01'
+                            onChange={(e) => this.seekBar(e)}
+                        />
+                    </div>
+                    <div className='col-md-12 col-sm-12 audio-control'>
+                        {
+                            play &&
+                            <span className='glyphicon glyphicon-pause' onClick={() => this.playSong()}></span>
+                        }
+                        {
+                            !play &&
+                            <span className='glyphicon glyphicon-play' onClick={() => this.playSong()}></span>
+                        }
+                            <span className='glyphicon glyphicon-stop' onClick={()=> this.stopSong()}></span>
+                            <span className='glyphicon glyphicon-step-backward' onClick={() => this.changeTrack('prev')}></span>
+                            <span className='glyphicon glyphicon-step-forward' onClick={() => this.changeTrack('next')}></span>
+                    </div>
+                </div>
+                {/* File listings */}
+                <div className='col-md-3 col-sm-12 drag_drop' onClick={()=> this.fileBrowse()}>
+                    <div className='col-md-12'>
+                        <label htmlFor='inputFile' ref='inputLabel'>Drop or click to add songs</label>
+                        <input type='file' id='inputFile' style={{'display':'none'}} multiple  onChange={(e) => this.songList(e)}/>
                     </div>
                     {
                      playList && playList.length > 0 &&
@@ -76,7 +203,7 @@ class Player extends Component{
                             <div key={index}>
                                 <span 
                                     style={{'cursor':'pointer'}} 
-                                    className={activeSongIndex == index ? 'active' : ''}
+                                    className={activeSongIndex === index ? 'active' : ''}
                                     onClick={()=> this.playFile(i, index)}
                                     >{i.name}</span>
                             </div>     
@@ -84,11 +211,7 @@ class Player extends Component{
                      })   
                     }
                 </div>
-                <h4>Player Controls</h4>
-                <div className='col-md-6'>
-                    <button className='btn btn-success' role='play' onClick={() => this.playSong()}>Play</button>
-                    <button className='btn btn-danger' role='stop' onClick={()=> this.stopSong()}>Stop</button>
-                </div>
+            </div>
             </div>
         );
     }
