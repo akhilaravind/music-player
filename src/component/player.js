@@ -167,7 +167,10 @@ class Player extends Component{
             <div className='col-md-12 col-sm-6'>
                 <div className='col-md-5 col-sm-12 player_control'>
                     <div className='col-md-8 col-sm-12 album_cover'>
-                        {/* <img src={artistImage} height='100%' width='100%' /> */}
+                        <div className='volume-label'>
+                            <i className="glyphicon glyphicon-volume-up"></i> 
+                            <span>{volume}</span>
+                        </div>
                         <div className='col-md-6 volume-control'>
                             <input type='range' id='volume' steps='1' value={volume} onChange={(e) => this.updateVolume(e)} min='0' max='100' />
                         </div>
@@ -197,36 +200,25 @@ class Player extends Component{
                     </div>
                 </div>
                 {/* File listings */}
-                <div className='col-md-3 col-sm-12 drag_drop' onClick={()=> this.fileBrowse()}>
+                <div className='col-md-4 col-sm-12 drag_drop' onClick={()=> this.fileBrowse()}>
                     <div className='col-md-12'>
-                        <label htmlFor='inputFile' ref='inputLabel'>Drop or click to add songs</label>
-                        <input type='file' id='inputFile' style={{'display':'none'}} multiple  onChange={(e) => this.songList(e)}/>
+                        <label htmlFor='inputFile' ref='inputLabel'>Drag and drop or click to add songs</label>
+                        <input type='file'  accept='audio/mp3' id='inputFile' style={{'display':'none'}} multiple  onChange={(e) => this.songList(e)}/>
                     </div>
                     <table>
-                    {
-                     playList && playList.length > 0 &&
-                        <thead>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                        </thead>
-                    }    
+                        <tbody>
                     {
                         playList && playList.length > 0 &&
                         playList.map((i, index) => {
                             return (
-                                <tr key={index}>
-                                    <td>{index +1}</td>
-                                    <td 
-                                        style={{'cursor':'pointer'}} 
-                                        className={activeSongIndex === index ? 'active' : ''}
-                                        onClick={(e)=> this.playFile(i, index, e)}
-                                        >{i.name}</td>
-                                    <td></td>     
+                                <tr key={index} onClick={(e)=> this.playFile(i, index, e)} className={activeSongIndex === index ? 'active' : ''}>
+                                    <td width='50px'>{index +1}</td>
+                                    <td>{i.name.replace(/\.([^\.]*)$/,'')}</td>
                                 </tr>
                          )
                         })   
                     }
+                    </tbody>
                     </table>
                 </div>
             </div>
