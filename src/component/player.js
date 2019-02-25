@@ -42,7 +42,8 @@ class Player extends Component{
         playList = playList ? {...playList, ...files}: files;
         this.setState({
             playList,
-            file : e.target.files
+            file : e.target.files,
+            play: false
         });
         this.audio.pause();
         this.audio.currentTime = 0;
@@ -165,7 +166,7 @@ class Player extends Component{
         return(
             <div onDragOver ={(e) => this.dragOver(e)} onDrop={(e) => this.fileDropHandler(e)} onDragLeave={(e) => e.preventDefault()}>
             <div className='col-md-12 col-sm-6'>
-                <div className='col-md-5 col-sm-12 player_control'>
+                <div className='col-md-4 col-sm-12 player_control'>
                     <div className='col-md-8 col-sm-12 album_cover'>
                         <div className='volume-label'>
                             <i className="glyphicon glyphicon-volume-up"></i> 
@@ -176,6 +177,7 @@ class Player extends Component{
                         </div>
                     </div>
                     <div className='col-md-12 col-sm-12 track'>
+                        <span>{currentTime ? parseFloat(currentTime).toFixed(2) : 0.00}</span>
                         <input 
                             type='range' 
                             value={currentTime ? currentTime : 0} 
